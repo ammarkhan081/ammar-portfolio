@@ -1,0 +1,241 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { projects, getProject, person } from "@/lib/content";
+import ProjectCard from "@/components/ProjectCard";
+import { ArrowLeft, ArrowUpRight, Mail, PlayCircle, Clock, Download } from "@/components/icons";
+import EmailLink from "@/components/EmailLink";
+import ProjectGallery from "@/components/ProjectGallery";
+import {
+  AshiaDiagram,
+  EvalPlatformDiagram,
+  YoutubeDiagram,
+  ResearchAnalystDiagram,
+  FinanceSovereignDiagram,
+  GrpoDiagram,
+} from "@/components/diagrams";
+
+const diagrams: Record<string, () => JSX.Element> = {
+  ashia: AshiaDiagram,
+  "ai-evaluation-reliability-platform": EvalPlatformDiagram,
+  "youtube-video-intelligence": YoutubeDiagram,
+  "ai-research-analyst": ResearchAnalystDiagram,
+  "finance-sovereign-assistant": FinanceSovereignDiagram,
+  "grpo-reasoning-model": GrpoDiagram,
+};
+
+export function generateStaticParams() {
+  return projects.map((p) => ({ slug: p.slug }));
+}
+
+export function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Metadata {
+  const project = getProject(params.slug);
+  if (!project) return { title: "Not found" };
+  return {
+    title: `${project.title} — ${person.name}`,
+    description: project.summary,
+  };
+}
+
+export default function ProjectPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const project = getProject(params.slug);
+  if (!project) notFound();
+
+  const others = projects.filter((p) => p.slug !== project.slug).slice(0, 2);
+
+  return (
+    <main className="shell detail" style={{ ["--accent2" as any]: project.accent }}>
+      <Link href="/work" className="back">
+        <ArrowLeft /> All projects
+      </Link>
+
+      {project.inProgress && (
+        <div style={{ marginBottom: 16 }}>
+          <span className="progress-badge" style={{ position: "static", fontSize: 12 }}>
+            🔬 Research In Progress
+          </span>
+        </div>
+      )}
+
+      <p className="detail-cat" style={{ color: project.accent }}>
+        {project.category}
+      </p>
+      <h1>{project.title}</h1>
+      <p className="lead">{project.overview}</p>
+
+      {project.buildTime && (
+        <div className="build-time-pill" style={{ borderColor: `${project.accent}40`, color: project.accent }}>
+          <Clock />
+          Built in {project.buildTime}
+        </div>
+      )}
+
+      {/* ── Demo Video ──────────────────────────────────────── */}
+      {"videoUrl" in project && (
+        <section className="block video-block">
+          <div className="b-sub">Demo</div>
+          <h3>See It Running</h3>
+          {project.videoUrl ? (
+            <div className="video-iframe-wrap">
+              {/* Supports YouTube, Loom, or any iframe-embeddable URL */}
+              <iframe
+                src={project.videoUrl}
+                title={`${project.title} demo`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="video-placeholder">
+              <PlayCircle />
+              <span className="video-placeholder-text">Walkthrough coming soon</span>
+              {project.link ? (
+                <a
+                  href={project.link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="video-placeholder-sub video-gh-link"
+                >
+                  View full source code and architecture on GitHub →
+                </a>
+              ) : (
+                <EmailLink className="video-placeholder-sub video-gh-link" label="Request a code walkthrough →" />
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Screenshot Gallery ──────────────────────────────── */}
+      {project.screenshots && project.screenshots.length > 0 && (
+        <section className="block">
+          <div className="b-sub">Screenshots</div>
+          <h3>Platform Walkthrough</h3>
+          <ProjectGallery slides={project.screenshots} accent={project.accent} />
+        </section>
+      )}
+
+      {/* ── Incident Postmortem Download ─────────────────────── */}
+      {project.postmortemUrl && (
+        <a
+          href={project.postmortemUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="postmortem-download"
+          style={{ borderColor: `${project.accent}40`, color: project.accent }}
+        >
+          <div className="postmortem-download-icon" style={{ background: `${project.accent}18` }}>
+            <Download />
+          </div>
+          <div className="postmortem-download-body">
+            <div className="postmortem-download-title">Incident Postmortem — b4657e51</div>
+            <div className="postmortem-download-sub">
+              HIGH severity · order-service · Resolved in 18s · Auto-generated by ASHIA
+            </div>
+          </div>
+          <span className="postmortem-download-cta">Download PDF →</span>
+        </a>
+      )}
+
+      <div className="detail-hero" style={{ background: project.gradient }}>
+        <h2>{project.title}</h2>
+      </div>
+
+      <div className="stack-row">
+        {project.stack.map((s) => (
+          <span className="tag" key={s}>
+            {s}
+          </span>
+        ))}
+      </div>
+
+      {/* ── Architecture Diagram ────────────────────────────── */}
+      {diagrams[project.slug] && (
+        <section className="block">
+          <div className="b-sub">Architecture</div>
+          <h3>System Design</h3>
+          <div className="diagram-frame">
+            {(() => {
+              const Diagram = diagrams[project.slug];
+              return <Diagram />;
+            })()}
+          </div>
+        </section>
+      )}
+
+      {project.sections.map((sec, i) => (
+        <section className="block" key={i}>
+          <div className="b-sub">{sec.subtitle}</div>
+          <h3>{sec.title}</h3>
+          <p>{sec.body}</p>
+          {i === 0 && (
+            <div className="feature-list">
+              {project.features.map((f, fi) => (
+                <div className="feature" key={fi}>
+                  <span
+                    className="dot"
+                    style={{ background: project.accent }}
+                  />
+                  {f}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
+
+      <section
+        className="takeaway"
+        style={{
+          background: `linear-gradient(135deg, ${project.accent}1a, rgba(255,255,255,0.02))`,
+          borderColor: `${project.accent}33`,
+        }}
+      >
+        <div className="t-label">Takeaway</div>
+        <h3>What I Learned</h3>
+        <p>{project.takeaway}</p>
+      </section>
+
+      {project.link ? (
+        <a
+          href={project.link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="visit"
+        >
+          {project.link.label} <ArrowUpRight />
+        </a>
+      ) : (
+        <EmailLink className="visit" label="Code walkthrough available on request">
+          <Mail />
+        </EmailLink>
+      )}
+
+      {/* ── More projects ───────────────────────────────────── */}
+      <section className="more">
+        <h2 className="section-title">More projects</h2>
+        <div className="cards">
+          {others.map((p) => (
+            <ProjectCard key={p.slug} project={p} />
+          ))}
+        </div>
+      </section>
+
+      <footer className="foot">
+        <Link href="/">← Back to home</Link>
+        <div className="foot-links">
+          <a href="https://github.com/ammarkhan081" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://linkedin.com/in/ammarkhan-tech" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+      </footer>
+    </main>
+  );
+}
