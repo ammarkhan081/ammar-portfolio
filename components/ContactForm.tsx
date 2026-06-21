@@ -10,7 +10,7 @@ import { CheckCircle } from "@/components/icons";
 //  3. Replace YOUR_FORM_ID below with that ID
 //  4. Formspree free tier: 50 submissions/month — more than enough
 // ─────────────────────────────────────────────────────────────────
-const FORMSPREE_ID = "maqzzrvw";
+const FORMSPREE_ID: string = "maqzzrvw";
 const FORM_ENDPOINT = `https://formspree.io/f/${FORMSPREE_ID}`;
 const FALLBACK_EMAIL = "ammarkhan9903233@gmail.com";
 
